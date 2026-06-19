@@ -6,6 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 时光家 (TimeHouse) is a family photo album app for the Chinese mainland market. V1.0 (MVP) is complete. It consists of a Flutter mobile app and a Node.js/Express backend, using Volcano Engine TOS for cloud storage.
 
+## Repository
+
+GitHub: `https://github.com/sunner777/-timehouse`
+SSH: `git@github.com:sunner777/-timehouse.git`
+
 ## Commands
 
 ### Backend (`backend/`)
@@ -139,8 +144,9 @@ MongoDB and Redis connections have been removed from startup (unused in V1.0/V2.
 
 | Component | Detail |
 |-----------|--------|
-| API URL | `https://api.timehouse.top` (port 443) |
+| API URL | `https://api.timehouse.top` (port 443, ICP 备案已通过) |
 | ECS | `121.40.161.137`, Alibaba Cloud 99-plan, Ubuntu 22.04, 2C2G 3M |
+| Repo | `https://github.com/sunner777/-timehouse` |
 | SSH | `ssh -i ~/.ssh/id_ed25519_timehouse root@121.40.161.137` |
 | MySQL | Docker 8.0, 127.0.0.1:3306, root password `112358` |
 | Redis | Docker 7.0, 127.0.0.1:6379 |
