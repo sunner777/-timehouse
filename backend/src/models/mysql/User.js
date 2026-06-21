@@ -81,9 +81,25 @@ class User {
    * @returns {Promise<boolean>} 更新是否成功
    */
   static async update(id, userData) {
-    const { nickname, avatar } = userData;
-    const query = 'UPDATE users SET nickname = ?, avatar = ?, updated_at = NOW() WHERE id = ?';
-    const [result] = await mysqlPool.execute(query, [nickname, avatar, id]);
+    const fields = [];
+    const values = [];
+
+    if (userData.nickname !== undefined) {
+      fields.push('nickname = ?');
+      values.push(userData.nickname);
+    }
+    if (userData.avatar !== undefined) {
+      fields.push('avatar = ?');
+      values.push(userData.avatar);
+    }
+
+    if (fields.length === 0) return false;
+
+    fields.push('updated_at = NOW()');
+    values.push(id);
+
+    const query = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
+    const [result] = await mysqlPool.execute(query, values);
     return result.affectedRows > 0;
   }
 }

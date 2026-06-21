@@ -6,10 +6,12 @@ class UserProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   String _nickname = '';
+  String? _avatar;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   String get nickname => _nickname;
+  String? get avatar => _avatar;
 
   final ApiService _apiService = ApiService();
 
@@ -47,14 +49,8 @@ class UserProvider extends ChangeNotifier {
           phone: data['phone'] ?? phone,
         );
         _apiService.setToken(data['token']);
-        // 保存服务器返回的昵称，并恢复本地保存的（以本地为准）
-        final localNick = StorageService.getNickname();
-        if (localNick != null && localNick.isNotEmpty) {
-          _nickname = localNick;
-        } else if (data['nickname'] != null && data['nickname'].toString().isNotEmpty) {
-          _nickname = data['nickname'].toString();
-          await StorageService.saveNickname(_nickname);
-        }
+        // 从服务器拉取最新资料（昵称/头像），本地兜底
+        await _restoreProfile(data);
       }
       _isLoading = false;
       notifyListeners();
@@ -67,31 +63,74 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
+  // 登录后恢复资料：优先服务器 → 本地 → 默认空
+  Future<void> _restoreProfile(Map<String, dynamic> loginData) async {
+    // 先取服务器返回的
+    final serverNick = (loginData['nickname'] != null && loginData['nickname'].toString().isNotEmpty)
+        ? loginData['nickname'].toString()
+        : null;
+    final serverAvatar = (loginData['avatar'] != null && loginData['avatar'].toString().isNotEmpty)
+        ? loginData['avatar'].toString()
+        : null;
+
+    // 再取本地保存的（旧设备可能只存在本地）
+    final localNick = StorageService.getNickname();
+    final localAvatar = StorageService.getAvatar();
+
+    // 服务器优先，本地兜底
+    if (serverNick != null) {
+      _nickname = serverNick;
+      await StorageService.saveNickname(_nickname);
+    } else if (localNick != null && localNick.isNotEmpty) {
+      _nickname = localNick;
+    }
+
+    if (serverAvatar != null) {
+      _avatar = serverAvatar;
+      await StorageService.saveAvatar(_avatar!);
+    } else if (localAvatar != null && localAvatar.isNotEmpty) {
+      _avatar = localAvatar;
+    }
+  }
+
   // 登出 — 通知后端吊销 token，然后清除本地状态
   Future<void> logout() async {
-    await _apiService.logout();      // 尽力通知后端（网络失败也继续）
+    await _apiService.logout();
     await StorageService.clearUserInfo();
     _apiService.clearToken();
     notifyListeners();
   }
 
-  // 设置昵称（存本地 + 调后端接口）
+  // 设置昵称（存本地 + 调后端接口，不再静默吞错误）
   Future<void> setNickname(String name) async {
     _nickname = name;
     await StorageService.saveNickname(name);
-    try { await _apiService.updateProfile(nickname: name); } catch (_) {}
-    notifyListeners();
+    notifyListeners(); // 先乐观更新 UI
+
+    try {
+      await _apiService.updateProfile(nickname: name);
+    } catch (e) {
+      // 后端失败时回滚本地昵称并提示用户
+      _errorMessage = '保存昵称失败: $e';
+      notifyListeners();
+    }
   }
 
-  // 检查登录状态
+  // 检查登录状态（App 启动时）
   Future<void> checkLoginStatus() async {
     final userId = StorageService.getUserId();
     final token = StorageService.getToken();
     if (userId != null && token != null) {
       _apiService.setToken(token);
       _nickname = StorageService.getNickname() ?? '';
+      _avatar = StorageService.getAvatar();
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
   }
 }

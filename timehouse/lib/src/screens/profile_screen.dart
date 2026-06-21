@@ -22,6 +22,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _editNickname(UserProvider provider) {
+    provider.clearError();
     final ctrl = TextEditingController(text: provider.nickname.isNotEmpty ? provider.nickname : '我的家人');
     showDialog(
       context: context,
@@ -93,10 +94,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: CircleAvatar(
                       radius: 48,
                       backgroundColor: const Color(0xFF5B9BD5).withOpacity(0.12),
-                      child: Text(
-                        (provider.nickname ?? '我').isNotEmpty ? (provider.nickname ?? '我')[0] : '我',
-                        style: const TextStyle(fontSize: 36, color: Color(0xFF5B9BD5), fontWeight: FontWeight.w600),
-                      ),
+                      backgroundImage: (provider.avatar != null && provider.avatar!.isNotEmpty)
+                          ? NetworkImage(provider.avatar!)
+                          : null,
+                      child: (provider.avatar == null || provider.avatar!.isEmpty)
+                          ? Text(
+                              provider.nickname.isNotEmpty ? provider.nickname[0] : '我',
+                              style: const TextStyle(fontSize: 36, color: Color(0xFF5B9BD5), fontWeight: FontWeight.w600),
+                            )
+                          : null,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -106,7 +112,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          provider.nickname ?? '我的家人',
+                          provider.nickname.isNotEmpty ? provider.nickname : '我的家人',
                           style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(width: 6),
@@ -116,6 +122,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(_displayPhone, style: const TextStyle(fontSize: 15, color: Color(0xFF8E8E93))),
+                  // 错误提示
+                  if (provider.errorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        provider.errorMessage!,
+                        style: const TextStyle(fontSize: 12, color: Colors.red),
+                      ),
+                    ),
                 ],
               ),
             ),

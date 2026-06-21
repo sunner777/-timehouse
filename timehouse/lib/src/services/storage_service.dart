@@ -73,12 +73,21 @@ class StorageService {
     return _prefs?.getString('nickname');
   }
 
+  // 头像
+  static Future<void> saveAvatar(String avatar) async {
+    await _prefs?.setString('avatar', avatar);
+  }
+  static String? getAvatar() {
+    return _prefs?.getString('avatar');
+  }
+
   // 清除用户信息
   static Future<void> clearUserInfo() async {
     await _prefs?.remove('userId');
     await _prefs?.remove('token');
     await _prefs?.remove('phone');
     await _prefs?.remove('nickname');
+    await _prefs?.remove('avatar');
   }
 
   // 保存照片到本地数据库
