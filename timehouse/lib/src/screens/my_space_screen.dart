@@ -119,12 +119,10 @@ class _MySpaceScreenState extends State<MySpaceScreen> with SingleTickerProvider
         : TabBarView(
             controller: _tabController,
             children: [
-              photoProvider.isLoadingMyPhotos
-                  ? const Center(child: CircularProgressIndicator())
-                  : PhotoGridView(
-                      photos: photoProvider.photos,
-                      onPhotoLongPress: _onPhotoLongPress,
-                    ),
+              PhotoGridView(
+                  photos: photoProvider.photos,
+                  onPhotoLongPress: _onPhotoLongPress,
+                ),
               _buildFamilyTab(familyProvider),
             ],
           );
