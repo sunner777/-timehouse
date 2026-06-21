@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import 'package:gal/gal.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/photo.dart';
 import '../providers/photo_provider.dart';
 import '../services/photo_cache.dart';
@@ -289,25 +290,50 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
 
   Widget _buildPhotoView(Photo photo) {
     // 优先用本地缓存文件
-    final imageProvider = (_isLocal && _localPath != null)
-        ? FileImage(File(_localPath!)) as ImageProvider
-        : NetworkImage(photo.url);
+    if (_isLocal && _localPath != null) {
+      return GestureDetector(
+        onTap: _onTapPhoto,
+        child: InteractiveViewer(
+          transformationController: _zoomCtrl,
+          panEnabled: _isZoomed,
+          scaleEnabled: _isZoomed,
+          minScale: 1.0,
+          maxScale: 5.0,
+          boundaryMargin: EdgeInsets.all(_isZoomed ? double.infinity : 0),
+          child: Center(
+            child: Image(
+              image: FileImage(File(_localPath!)),
+              fit: BoxFit.contain,
+              gaplessPlayback: true,
+              errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.white54, size: 64),
+            ),
+          ),
+        ),
+      );
+    }
 
+    // 网络图片：使用 CachedNetworkImage 持久化缓存大图
     return GestureDetector(
       onTap: _onTapPhoto,
-      child: InteractiveViewer(
-        transformationController: _zoomCtrl,
-        panEnabled: _isZoomed,
-        scaleEnabled: _isZoomed,
-        minScale: 1.0,
-        maxScale: 5.0,
-        boundaryMargin: EdgeInsets.all(_isZoomed ? double.infinity : 0),
-        child: Center(
-          child: Image(
-            image: imageProvider,
-            fit: BoxFit.contain,
-            gaplessPlayback: true,
-            errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.white54, size: 64),
+      child: CachedNetworkImage(
+        imageUrl: photo.url,
+        cacheKey: photo.id,
+        fit: BoxFit.contain,
+        placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: Colors.white54)),
+        errorWidget: (context, url, error) => const Icon(Icons.broken_image, color: Colors.white54, size: 64),
+        imageBuilder: (context, imageProvider) => InteractiveViewer(
+          transformationController: _zoomCtrl,
+          panEnabled: _isZoomed,
+          scaleEnabled: _isZoomed,
+          minScale: 1.0,
+          maxScale: 5.0,
+          boundaryMargin: EdgeInsets.all(_isZoomed ? double.infinity : 0),
+          child: Center(
+            child: Image(
+              image: imageProvider,
+              fit: BoxFit.contain,
+              gaplessPlayback: true,
+            ),
           ),
         ),
       ),

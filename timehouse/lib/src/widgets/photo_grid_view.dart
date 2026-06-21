@@ -153,8 +153,9 @@ class _PhotoGridViewState extends State<PhotoGridView> {
                       children: [
                         CachedNetworkImage(
                           imageUrl: photo.thumbnailUrl,
+                          cacheKey: photo.id,  // 用照片ID做缓存key，避免预签名URL变化导致缓存失效
                           fit: BoxFit.cover,
-                          memCacheWidth: 300,  // 缩略图内存缓存限制
+                          memCacheWidth: 300,
                           maxWidthDiskCache: 600,
                           placeholder: (context, url) => Container(
                             color: const Color(0xFFE8E8E4),

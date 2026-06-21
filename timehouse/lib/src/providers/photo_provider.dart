@@ -32,6 +32,7 @@ String _getMimeType(String fileName) {
 class PhotoProvider extends ChangeNotifier {
   List<Photo> _photos = [];
   bool _isLoading = false;
+  bool _isLoadingMyPhotos = false; // 独立于家人共享加载
   String? _errorMessage;
   int _lastUploadSkippedCount = 0;
   final Map<String, List<Photo>> _familyPhotosCache = {};
@@ -39,15 +40,16 @@ class PhotoProvider extends ChangeNotifier {
 
   List<Photo> get photos => _photos;
   bool get isLoading => _isLoading;
+  bool get isLoadingMyPhotos => _isLoadingMyPhotos;
   String? get errorMessage => _errorMessage;
   int get lastUploadSkippedCount => _lastUploadSkippedCount;
 
   final ApiService _apiService = ApiService();
   ApiService getApiService() => _apiService;
 
-  // 获取照片列表
+  // 获取照片列表（我的照片）
   Future<void> getPhotos() async {
-    _isLoading = true;
+    _isLoadingMyPhotos = true;
     _errorMessage = null;
     notifyListeners();
 
@@ -56,7 +58,7 @@ class PhotoProvider extends ChangeNotifier {
       final localPhotos = await StorageService.getPhotos();
       if (localPhotos.isNotEmpty) {
         _photos = localPhotos;
-        _isLoading = false;
+        _isLoadingMyPhotos = false;
         notifyListeners();
       }
 
@@ -76,15 +78,15 @@ class PhotoProvider extends ChangeNotifier {
         location: item['location'],
         tags: List<String>.from(item['tags']),
       )).toList();
-      
+
       _photos = serverPhotos;
       await StorageService.savePhotos(serverPhotos);
 
-      _isLoading = false;
+      _isLoadingMyPhotos = false;
       notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
-      _isLoading = false;
+      _isLoadingMyPhotos = false;
       notifyListeners();
     }
   }
@@ -491,10 +493,27 @@ class PhotoProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<List<Photo>> getFamilyPhotosCached(String familyId) async {
-    if (_familyPhotosLoading[familyId] == true) return _familyPhotosCache[familyId] ?? [];
-    if (_familyPhotosCache.containsKey(familyId)) return _familyPhotosCache[familyId]!;
+  // 存储进行中的 Future，防止多次触发相同 API 调用
+  final Map<String, Future<List<Photo>>> _familyPhotosFuture = {};
 
+  Future<List<Photo>> getFamilyPhotosCached(String familyId) {
+    // 缓存命中直接返回
+    if (_familyPhotosCache.containsKey(familyId)) {
+      return Future.value(_familyPhotosCache[familyId]);
+    }
+
+    // 正在加载中，返回同一个 Future（避免 FutureBuilder 重建时提前返回空）
+    if (_familyPhotosFuture.containsKey(familyId)) {
+      return _familyPhotosFuture[familyId]!;
+    }
+
+    // 发起新请求，保存 Future 引用
+    final future = _loadFamilyPhotos(familyId);
+    _familyPhotosFuture[familyId] = future;
+    return future;
+  }
+
+  Future<List<Photo>> _loadFamilyPhotos(String familyId) async {
     _familyPhotosLoading[familyId] = true;
     notifyListeners();
 
@@ -504,6 +523,7 @@ class PhotoProvider extends ChangeNotifier {
       return photos;
     } finally {
       _familyPhotosLoading[familyId] = false;
+      _familyPhotosFuture.remove(familyId);
       notifyListeners();
     }
   }
