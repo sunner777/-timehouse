@@ -496,6 +496,16 @@ class PhotoProvider extends ChangeNotifier {
   // 存储进行中的 Future，防止多次触发相同 API 调用
   final Map<String, Future<List<Photo>>> _familyPhotosFuture = {};
 
+  // 同步获取缓存的家庭照片（不触发加载），供 build 方法直接使用
+  List<Photo> getCachedFamilyPhotos(String familyId) {
+    return _familyPhotosCache[familyId] ?? [];
+  }
+
+  // 是否为指定家庭正在加载照片
+  bool isFamilyPhotosLoading(String familyId) {
+    return _familyPhotosLoading[familyId] == true;
+  }
+
   Future<List<Photo>> getFamilyPhotosCached(String familyId) {
     // 缓存命中直接返回
     if (_familyPhotosCache.containsKey(familyId)) {

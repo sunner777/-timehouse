@@ -37,9 +37,22 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
   @override
   void initState() {
     super.initState();
+    // 显式监听 PhotoProvider，确保家庭照片缓存更新时能触发重建
+    final photoProvider = Provider.of<PhotoProvider>(context, listen: false);
+    photoProvider.addListener(_onPhotoChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<FamilyProvider>(context, listen: false).getFamilies();
     });
+  }
+
+  void _onPhotoChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    Provider.of<PhotoProvider>(context, listen: false).removeListener(_onPhotoChanged);
+    super.dispose();
   }
 
   void _clearSelection() {
@@ -450,41 +463,39 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
   }
 
   Widget _buildPhotoTimeline(Family family) {
+    // 直接用缓存渲染，不依赖 FutureBuilder（避免 Future 卡住导致永久转圈）
     final photoProvider = Provider.of<PhotoProvider>(context, listen: false);
-    final photosFuture = photoProvider.getFamilyPhotosCached(family.id);
+    final photoList = photoProvider.getCachedFamilyPhotos(family.id);
 
-    return FutureBuilder<List<Photo>>(
-      future: photosFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final photoList = snapshot.data;
-        if (photoList == null || photoList.isEmpty) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('✨', style: TextStyle(fontSize: 40)),
-                SizedBox(height: 12),
-                Text('暂无照片，快上传一张记录家人的美好吧',
-                    style: TextStyle(fontSize: 15, color: Color(0xFF8E8E93))),
-              ],
-            ),
-          );
-        }
-        return PhotoGridView(
-          photos: photoList,
-          isSelectionMode: _isSelectionMode,
-          selectedIds: _selectedPhotoIds.toList(),
-          onPhotoTap: _onPhotoTap,
-          onPhotoLongPress: _onPhotoLongPress,
-          familyId: family.id,
-          onPhotoViewReturn: () {
-            photoProvider.invalidateFamilyPhotos(family.id);
-            setState(() {});
-          },
-        );
+    if (photoList.isEmpty && !photoProvider.isFamilyPhotosLoading(family.id)) {
+      // 缓存未命中且不在加载中 → 触发加载
+      photoProvider.getFamilyPhotosCached(family.id);
+    }
+
+    if (photoList.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('✨', style: TextStyle(fontSize: 40)),
+            SizedBox(height: 12),
+            Text('暂无照片，快上传一张记录家人的美好吧',
+                style: TextStyle(fontSize: 15, color: Color(0xFF8E8E93))),
+          ],
+        ),
+      );
+    }
+
+    return PhotoGridView(
+      photos: photoList,
+      isSelectionMode: _isSelectionMode,
+      selectedIds: _selectedPhotoIds.toList(),
+      onPhotoTap: _onPhotoTap,
+      onPhotoLongPress: _onPhotoLongPress,
+      familyId: family.id,
+      onPhotoViewReturn: () {
+        photoProvider.invalidateFamilyPhotos(family.id);
+        setState(() {});
       },
     );
   }
