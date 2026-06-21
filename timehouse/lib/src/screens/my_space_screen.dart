@@ -30,10 +30,9 @@ class _MySpaceScreenState extends State<MySpaceScreen> with SingleTickerProvider
         _tryRefresh();
       }
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _tryRefresh();
-      Provider.of<FamilyProvider>(context, listen: false).getFamilies();
-    });
+    // 直接在 initState 触发加载，不等待首帧，避免 addPostFrameCallback 时序问题
+    _tryRefresh();
+    Provider.of<FamilyProvider>(context, listen: false).getFamilies();
   }
 
   @override
