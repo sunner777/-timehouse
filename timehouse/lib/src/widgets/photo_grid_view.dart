@@ -82,7 +82,7 @@ class _PhotoGridViewState extends State<PhotoGridView> {
   @override
   Widget build(BuildContext context) {
     if (widget.photos.isEmpty) {
-      return const Center(child: Text('暂无照片', style: TextStyle(color: Color(0xFF8E8E93))));
+      return const Center(child: Text('📷 下拉刷新试试', style: TextStyle(fontSize: 16, color: Color(0xFF8E8E93))));
     }
 
     final grouped = _groupByDate();
