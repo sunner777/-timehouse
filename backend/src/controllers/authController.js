@@ -127,7 +127,10 @@ class AuthController {
     try {
       const { id: userId } = req.user;
       const { nickname, avatar } = req.body;
+      // 临时调试日志：记录请求体内容
+      console.log('[updateProfile] userId=%d body=%s', userId, JSON.stringify(req.body));
       const result = await AuthService.updateProfile(userId, { nickname, avatar });
+      console.log('[updateProfile] result=%s', JSON.stringify(result));
       response.success(res, result, '更新成功');
     } catch (error) {
       next(error);

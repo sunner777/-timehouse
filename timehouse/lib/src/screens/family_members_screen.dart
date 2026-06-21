@@ -19,8 +19,12 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<FamilyProvider>(context, listen: false).getFamilyDetail(widget.familyId);
+      _refreshMembers();
     });
+  }
+
+  void _refreshMembers() {
+    Provider.of<FamilyProvider>(context, listen: false).getFamilyDetail(widget.familyId);
   }
 
   @override

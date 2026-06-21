@@ -49,8 +49,10 @@ class UserProvider extends ChangeNotifier {
           phone: data['phone'] ?? phone,
         );
         _apiService.setToken(data['token']);
-        // 从服务器拉取最新资料（昵称/头像），本地兜底
+        // 先用 smsLogin 返回的数据恢复
         await _restoreProfile(data);
+        // 再调 GET /auth/profile 拿最新数据兜底
+        await _fetchServerProfile();
       }
       _isLoading = false;
       notifyListeners();
@@ -60,6 +62,24 @@ class UserProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return false;
+    }
+  }
+
+  // 从 GET /auth/profile 拉取最新资料（兜底保证数据一致）
+  Future<void> _fetchServerProfile() async {
+    try {
+      final profile = await _apiService.getUserInfo();
+      if (profile['nickname'] != null && profile['nickname'].toString().isNotEmpty) {
+        _nickname = profile['nickname'].toString();
+        await StorageService.saveNickname(_nickname);
+      }
+      if (profile['avatar'] != null && profile['avatar'].toString().isNotEmpty) {
+        _avatar = profile['avatar'].toString();
+        await StorageService.saveAvatar(_avatar!);
+      }
+      notifyListeners();
+    } catch (_) {
+      // 非关键路径，失败不阻塞
     }
   }
 
