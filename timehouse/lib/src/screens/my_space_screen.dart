@@ -30,13 +30,30 @@ class _MySpaceScreenState extends State<MySpaceScreen> with SingleTickerProvider
         _tryRefresh();
       }
     });
-    // 直接在 initState 触发加载，不等待首帧，避免 addPostFrameCallback 时序问题
-    _tryRefresh();
-    Provider.of<FamilyProvider>(context, listen: false).getFamilies();
+    // 显式监听 PhotoProvider，确保数据变更时能触发 setState 重建
+    final photoProvider = Provider.of<PhotoProvider>(context, listen: false);
+    photoProvider.addListener(_onDataChanged);
+    final familyProvider = Provider.of<FamilyProvider>(context, listen: false);
+    familyProvider.addListener(_onDataChanged);
+    // 两帧延迟：等页面布局绘制完毕 + TabBarView 子 Tab 就位
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _tryRefresh();
+        familyProvider.getFamilies();
+      });
+    });
+  }
+
+  void _onDataChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    Provider.of<PhotoProvider>(context, listen: false).removeListener(_onDataChanged);
+    Provider.of<FamilyProvider>(context, listen: false).removeListener(_onDataChanged);
     _tabController.dispose();
     super.dispose();
   }
@@ -105,8 +122,8 @@ class _MySpaceScreenState extends State<MySpaceScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    final photoProvider = context.watch<PhotoProvider>();
-    final familyProvider = context.watch<FamilyProvider>();
+    final photoProvider = Provider.of<PhotoProvider>(context);
+    final familyProvider = Provider.of<FamilyProvider>(context);
 
     final body = _isSelectionMode
         ? PhotoGridView(
