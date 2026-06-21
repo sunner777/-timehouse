@@ -164,6 +164,12 @@ class _MySpaceScreenState extends State<MySpaceScreen> with SingleTickerProvider
             ),
             const SizedBox(height: 12),
             // Tab bar
+            // 轻量加载提示（不阻塞 UI）
+            if (!_isSelectionMode && photoProvider.isLoadingMyPhotos)
+              const SizedBox(
+                height: 2,
+                child: LinearProgressIndicator(minHeight: 2),
+              ),
             if (!_isSelectionMode)
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 20),
