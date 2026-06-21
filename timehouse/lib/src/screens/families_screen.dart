@@ -236,6 +236,15 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
             const SizedBox(height: 12),
             // 主体
             Expanded(child: body),
+            // ICP 备案号
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text(
+                '浙ICP备2026043339号',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 11, color: Color(0xFFC0C0C0)),
+              ),
+            ),
           ],
         ),
       ),
@@ -486,6 +495,7 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
 
     return PhotoGridView(
       photos: photoList,
+      isLoading: photoProvider.isFamilyPhotosLoading(family.id),
       isSelectionMode: _isSelectionMode,
       selectedIds: _selectedPhotoIds.toList(),
       onPhotoTap: _onPhotoTap,

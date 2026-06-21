@@ -24,21 +24,26 @@ class AppConfig {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await StorageService.init();
-  // 尽早初始化 ApiService
   ApiService();
-  initAppRouter(); // 初始化路由
-  runApp(const MyApp());
+  initAppRouter();
+
+  // 启动时从 SQLite 恢复照片缓存，让首帧就有数据（无闪现）
+  final photoProvider = PhotoProvider();
+  await photoProvider.init();
+
+  runApp(MyApp(photoProvider: photoProvider));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final PhotoProvider photoProvider;
+  const MyApp({super.key, required this.photoProvider});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
-        ChangeNotifierProvider(create: (_) => PhotoProvider()),
+        ChangeNotifierProvider.value(value: photoProvider),
         ChangeNotifierProvider(create: (_) => FamilyProvider(ApiService())),
       ],
       child: Builder(builder: (context) {

@@ -30,19 +30,16 @@ class _MySpaceScreenState extends State<MySpaceScreen> with SingleTickerProvider
         _tryRefresh();
       }
     });
-    // 显式监听 PhotoProvider，确保数据变更时能触发 setState 重建
+    // 显式监听确保数据变更必定触发重建
     final photoProvider = Provider.of<PhotoProvider>(context, listen: false);
     photoProvider.addListener(_onDataChanged);
     final familyProvider = Provider.of<FamilyProvider>(context, listen: false);
     familyProvider.addListener(_onDataChanged);
-    // 两帧延迟：等页面布局绘制完毕 + TabBarView 子 Tab 就位
+    // 首帧就绪后从服务器拉最新数据（本地缓存已在 main() 中预装）
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _tryRefresh();
-        familyProvider.getFamilies();
-      });
+      _tryRefresh();
+      familyProvider.getFamilies();
     });
   }
 
@@ -136,10 +133,13 @@ class _MySpaceScreenState extends State<MySpaceScreen> with SingleTickerProvider
         : TabBarView(
             controller: _tabController,
             children: [
-              PhotoGridView(
-                  photos: photoProvider.photos,
-                  onPhotoLongPress: _onPhotoLongPress,
-                ),
+              // 已有缓存数据 → 直接展示；无缓存 + 加载中 → 转圈等待
+              photoProvider.photos.isEmpty && photoProvider.isLoadingMyPhotos
+                  ? const Center(child: CircularProgressIndicator())
+                  : PhotoGridView(
+                      photos: photoProvider.photos,
+                      onPhotoLongPress: _onPhotoLongPress,
+                    ),
               _buildFamilyTab(familyProvider),
             ],
           );

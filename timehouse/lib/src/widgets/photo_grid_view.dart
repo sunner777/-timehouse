@@ -12,6 +12,7 @@ class PhotoGridView extends StatefulWidget {
   final Function(String)? onPhotoLongPress;
   final VoidCallback? onPhotoViewReturn;
   final String? familyId;
+  final bool isLoading; // 是否正在后台加载中
 
   const PhotoGridView({
     super.key,
@@ -22,6 +23,7 @@ class PhotoGridView extends StatefulWidget {
     this.onPhotoLongPress,
     this.onPhotoViewReturn,
     this.familyId,
+    this.isLoading = false,
   });
 
   @override
@@ -82,6 +84,10 @@ class _PhotoGridViewState extends State<PhotoGridView> {
   @override
   Widget build(BuildContext context) {
     if (widget.photos.isEmpty) {
+      // 正在加载中 → 不显示空状态，避免「暂无照片 → 照片」的闪现
+      if (widget.isLoading) {
+        return const SizedBox.shrink();
+      }
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

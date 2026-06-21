@@ -45,6 +45,9 @@ desktop.ini
 *.key
 *.p12
 *.pfx
+*.jks
+keystore.properties
+key.properties
 !key/timehouse-ecs-key.pem
 
 # Database

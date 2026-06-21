@@ -47,6 +47,15 @@ class PhotoProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
   ApiService getApiService() => _apiService;
 
+  /// 启动时从 SQLite 恢复缓存，让首帧就有照片（无闪现）
+  Future<void> init() async {
+    final cached = await StorageService.getPhotos();
+    if (cached.isNotEmpty) {
+      _photos = cached;
+      notifyListeners();
+    }
+  }
+
   // 获取照片列表（我的照片）
   Future<void> getPhotos() async {
     _isLoadingMyPhotos = true;
