@@ -113,26 +113,36 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
     final familyProvider = context.watch<FamilyProvider>();
     final photoProvider = context.watch<PhotoProvider>();
     final hasFamilies = familyProvider.families.isNotEmpty;
+    final hasError = familyProvider.errorMessage != null;
+
+    Widget bodyContent;
+    if (familyProvider.isLoading) {
+      bodyContent = const Center(child: CircularProgressIndicator());
+    } else if (hasError) {
+      bodyContent = _buildErrorState(familyProvider.errorMessage!, () {
+        familyProvider.clearError();
+        familyProvider.getFamilies();
+      });
+    } else if (!hasFamilies) {
+      bodyContent = _buildEmptyState();
+    } else {
+      bodyContent = Column(
+        children: [
+          const SizedBox(height: 4),
+          SizedBox(
+            height: 48,
+            child: _buildTabs(familyProvider),
+          ),
+          Expanded(
+            child: _buildPhotoTimeline(familyProvider.families[_selectedFamilyIndex]),
+          ),
+        ],
+      );
+    }
 
     final body = Stack(
       children: [
-        familyProvider.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : !hasFamilies
-                ? _buildEmptyState()
-                : Column(
-                    children: [
-                      // 标签栏
-                      const SizedBox(height: 4),
-                      SizedBox(
-                        height: 48,
-                        child: _buildTabs(familyProvider),
-                      ),
-                      Expanded(
-                        child: _buildPhotoTimeline(familyProvider.families[_selectedFamilyIndex]),
-                      ),
-                    ],
-                  ),
+        bodyContent,
         if (_showMenu) _buildMenuOverlay(),
       ],
     );
@@ -361,6 +371,50 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String errorMessage, VoidCallback onRetry) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.cloud_off_rounded, size: 56, color: Color(0xFFC0C0C0)),
+            const SizedBox(height: 20),
+            const Text('加载失败', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Text(
+              errorMessage,
+              style: const TextStyle(fontSize: 14, color: Color(0xFF8E8E93)),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 32),
+            Material(
+              color: const Color(0xFF5B9BD5),
+              borderRadius: BorderRadius.circular(28),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(28),
+                onTap: onRetry,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.refresh, size: 18, color: Colors.white),
+                      SizedBox(width: 6),
+                      Text('重试', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

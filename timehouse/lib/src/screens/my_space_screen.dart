@@ -199,6 +199,50 @@ class _MySpaceScreenState extends State<MySpaceScreen> with SingleTickerProvider
       return const Center(child: CircularProgressIndicator());
     }
 
+    final hasError = familyProvider.errorMessage != null;
+    if (hasError) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.cloud_off_rounded, size: 48, color: Color(0xFFC0C0C0)),
+              const SizedBox(height: 16),
+              Text(familyProvider.errorMessage!,
+                  style: const TextStyle(fontSize: 14, color: Color(0xFF8E8E93)),
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 24),
+              Material(
+                color: const Color(0xFF5B9BD5),
+                borderRadius: BorderRadius.circular(28),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(28),
+                  onTap: () {
+                    familyProvider.clearError();
+                    familyProvider.getFamilies();
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.refresh, size: 16, color: Colors.white),
+                        SizedBox(width: 4),
+                        Text('重试', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Column(
       children: [
         Padding(

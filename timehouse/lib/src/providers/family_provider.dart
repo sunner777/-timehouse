@@ -35,9 +35,16 @@ class FamilyProvider extends ChangeNotifier {
     try {
       final response = await _apiService.getFamilies();
       if (response['code'] == 0) {
-        _families = (response['data']['families'] as List)
-            .map((item) => Family.fromJson(item))
-            .toList();
+        // 逐个解析，单个异常不阻塞其余数据
+        final familiesList = <Family>[];
+        for (final item in (response['data']['families'] as List)) {
+          try {
+            familiesList.add(Family.fromJson(item));
+          } catch (_) {
+            // 跳过解析失败的条目
+          }
+        }
+        _families = familiesList;
       } else {
         _setError(response['message'] ?? '获取家庭组列表失败');
       }
