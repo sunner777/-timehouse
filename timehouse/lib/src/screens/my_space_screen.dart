@@ -209,10 +209,6 @@ class _MySpaceScreenState extends State<MySpaceScreen> with SingleTickerProvider
   }
 
   Widget _buildFamilyTab(FamilyProvider familyProvider) {
-    if (familyProvider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     final hasError = familyProvider.errorMessage != null;
     if (hasError) {
       return Center(

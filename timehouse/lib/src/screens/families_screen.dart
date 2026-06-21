@@ -129,16 +129,12 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
     final hasError = familyProvider.errorMessage != null;
 
     Widget bodyContent;
-    if (familyProvider.isLoading) {
-      bodyContent = const Center(child: CircularProgressIndicator());
-    } else if (hasError) {
+    if (hasError) {
       bodyContent = _buildErrorState(familyProvider.errorMessage!, () {
         familyProvider.clearError();
         familyProvider.getFamilies();
       });
-    } else if (!hasFamilies) {
-      bodyContent = _buildEmptyState();
-    } else {
+    } else if (hasFamilies) {
       bodyContent = Column(
         children: [
           const SizedBox(height: 4),
@@ -151,6 +147,8 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
           ),
         ],
       );
+    } else {
+      bodyContent = _buildEmptyState();
     }
 
     final body = Stack(
