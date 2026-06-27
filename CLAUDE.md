@@ -129,12 +129,12 @@ flutter build apk --dart-define=API_BASE_URL=https://api.shiguangjia.cn/api/v1 -
 
 The values are read at `api_service.dart:49` (`kApiBaseUrl`) and `main.dart:11` (`AppConfig`).
 
-## Deployment Artifacts (added V2.1)
+## Deployment Artifacts (added V2.1, updated V2.2 git-based)
 
-- `backend/ecosystem.config.js` — PM2 cluster mode (2 instances, 512M memory limit)
+- `backend/ecosystem.config.js` — PM2 fork single instance, 256M memory limit, NODE_ENV=production
 - `backend/nginx/timehouse.conf` — Nginx HTTPS reverse proxy + security headers
 - `backend/Dockerfile` — Node.js 20 Alpine container
-- `backend/deploy.sh` — Rsync + PM2 reload deployment script
+- `backend/deploy.sh` — **Git-pull based deployment** (no longer rsync): `git pull origin master` → `npm install` (if package.json changed) → `pm2 reload` → `nginx reload` (if nginx conf changed)
 - `backend/.env.production` — Production env template (fill RDS/domain/JWT before deploy)
 - `backend/.gitignore` — Excludes .env, .env.production, logs
 
@@ -150,8 +150,9 @@ MongoDB and Redis connections have been removed from startup (unused in V1.0/V2.
 | SSH | `ssh -i ~/.ssh/id_ed25519_timehouse root@121.40.161.137` |
 | MySQL | Docker 8.0, 127.0.0.1:3306, root password `112358` |
 | Redis | Docker 7.0, 127.0.0.1:6379 |
-| App path | `/opt/timehouse` |
+| App path | `/opt/timehouse-repo/backend` (git clone of GitHub) |
 | Process | PM2 fork single instance, 127.0.0.1:3000 |
+| Deploy | `ssh server 'cd /opt/timehouse-repo/backend && bash deploy.sh'` or `git push && ssh server deploy` |
 | Logs | `/var/log/timehouse/` |
 | Backups | crontab daily 3am → `/opt/backups/mysql/`, retained 7 days |
 | Nginx | `/etc/nginx/sites-available/timehouse`, 80→443 HTTPS, reverse proxy to 127.0.0.1:3000 |
