@@ -1,16 +1,7 @@
-import java.util.Properties
-
 plugins {
     id("com.android.application")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
-}
-
-// 加载签名配置
-val keystoreProperties = Properties()
-val keystorePropertiesFile = rootProject.file("key.properties")
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(keystorePropertiesFile.inputStream())
 }
 
 android {
@@ -36,7 +27,7 @@ android {
     }
 
     signingConfigs {
-        create("myRelease") {
+        create("release") {
             storeFile = rootProject.file("timehouse-release.jks")
             storePassword = "timehouse123"
             keyAlias = "timehouse"
@@ -46,7 +37,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("myRelease")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
