@@ -1,38 +1,34 @@
 #!/bin/bash
+# 时光家后端部署脚本
+# 用法：本地 git push server master 之后，ssh 服务器执行此脚本
+#   ssh server 'cd /opt/timehouse-repo/backend && bash deploy.sh'
 set -e
-ECS_HOST="${ECS_HOST:-}"
-SSH_USER="${SSH_USER:-root}"
-APP_DIR="/opt/timehouse"
 
-if [ -z "$ECS_HOST" ]; then
-  echo "Usage: ECS_HOST=<new-server-ip> ./deploy.sh"
-  exit 1
+REPO_DIR="/opt/timehouse-repo/backend"
+
+# ── 记录变更文件 ──
+CHANGED=$(git -C /opt/timehouse-repo diff --name-only HEAD@{1} HEAD 2>/dev/null || echo "")
+
+echo "[$(date -Iseconds)] Deploy start"
+
+# ── npm install（仅 package.json 变更时） ──
+if echo "$CHANGED" | grep -q "package.json"; then
+  echo "  package.json changed, running npm install..."
+  cd "$REPO_DIR" && npm install --production 2>&1 | tail -3
 fi
 
-echo "=== Deploying to ${ECS_HOST} ==="
+# ── PM2 reload ──
+cd "$REPO_DIR" && pm2 reload ecosystem.config.js 2>&1
+echo "  PM2 reloaded"
 
-echo "=== Syncing code ==="
-rsync -avz \
-  --exclude 'node_modules' \
-  --exclude '.env' \
-  --exclude '.env.production' \
-  --exclude '.git' \
-  --exclude '*.log' \
-  --exclude 'logs' \
-  --exclude 'mysql_data' \
-  ./ ${SSH_USER}@${ECS_HOST}:${APP_DIR}/
+# ── Nginx 配置更新 ──
+if echo "$CHANGED" | grep -q "nginx/timehouse.conf"; then
+  cp "$REPO_DIR/nginx/timehouse.conf" /etc/nginx/sites-available/timehouse
+  nginx -t 2>&1 && systemctl reload nginx && echo "  Nginx reloaded"
+fi
 
-echo "=== Copy .env.production ==="
-scp .env.production ${SSH_USER}@${ECS_HOST}:${APP_DIR}/.env.production
+echo "[$(date -Iseconds)] Deploy done"
 
-echo "=== Installing dependencies ==="
-ssh ${SSH_USER}@${ECS_HOST} "cd ${APP_DIR} && npm ci --production"
-
-echo "=== Reloading PM2 ==="
-ssh ${SSH_USER}@${ECS_HOST} "cd ${APP_DIR} && pm2 reload ecosystem.config.js || pm2 start ecosystem.config.js"
-ssh ${SSH_USER}@${ECS_HOST} "pm2 save"
-
-echo "=== Deployment complete ==="
-echo "=== Running health check ==="
-sleep 3
-curl -f "https://api.timehouse.top/api/v1/health" || echo "Health check failed (may need DNS/SSL setup first)"
+# ── Health check ──
+sleep 2
+curl -sf https://api.timehouse.top/api/v1/health && echo "" && echo "Health: OK" || echo "Health: FAIL"
