@@ -1,4 +1,5 @@
 const express = require('express');
+const helmet = require('helmet');
 const cors = require('cors');
 const config = require('./config');
 const { mysqlPool, testMySQLConnection } = require('./config/database');
@@ -33,12 +34,19 @@ app.use((req, res, next) => {
   next();
 });
 
+// 安全头（Nginx 已设基础头，此处纵深防御）
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }, // 允许前端跨域加载图片
+  contentSecurityPolicy: false, // Nginx 层统一管理 CSP
+}));
+
 // 配置中间件
 app.use(cors({
   origin: config.cors.origin
 }));
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// 本服务仅处理 JSON API，关闭 extended querystring 解析减少攻击面
+app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
 // 应用速率限制
 app.use(rateLimiter);

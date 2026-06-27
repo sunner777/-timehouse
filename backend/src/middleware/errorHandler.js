@@ -10,15 +10,7 @@ const errorHandler = (err, req, res, next) => {
   if (err.isJoi) {
     return response.error(res, 9002, err.details[0].message);
   }
-  
-  // 处理MongoDB错误
-  if (err.name === 'MongoError') {
-    if (err.code === 11000) {
-      return response.error(res, 9006, '资源已存在');
-    }
-    return response.serverError(res, '数据库错误');
-  }
-  
+
   // 处理MySQL错误
   if (err.code && typeof err.code === 'string' && err.code.startsWith('ER_')) {
     return response.serverError(res, '数据库错误');

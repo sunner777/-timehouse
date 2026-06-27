@@ -25,11 +25,6 @@ const config = {
     connectionLimit: 10
   },
   
-  // MongoDB配置
-  mongodb: {
-    uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/timehouse'
-  },
-  
   // Redis配置
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
@@ -40,7 +35,13 @@ const config = {
   
   // JWT配置
   jwt: {
-    secret: process.env.JWT_SECRET || 'your-secret-key',
+    secret: process.env.JWT_SECRET || (() => {
+      if (process.env.NODE_ENV === 'production') {
+        console.error('[SECURITY] JWT_SECRET 未设置！生产环境必须通过环境变量配置。');
+        process.exit(1);
+      }
+      return 'dev-secret-change-me';
+    })(),
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d'
   },

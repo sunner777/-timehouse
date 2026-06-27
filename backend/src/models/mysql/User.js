@@ -1,5 +1,6 @@
 const { mysqlPool } = require('../../config/database');
 const bcrypt = require('bcrypt');
+const { clean } = require('../../utils/sanitize');
 
 class User {
   /**
@@ -18,7 +19,8 @@ class User {
       VALUES (?, ?, ?, ?, ?, NOW(), NOW())
     `;
 
-    const [result] = await mysqlPool.execute(query, [phone, hashedPassword, phone_verified ? 1 : 0, nickname || '', avatar || '']);
+    const safeNickname = clean(nickname);
+    const [result] = await mysqlPool.execute(query, [phone, hashedPassword, phone_verified ? 1 : 0, safeNickname, avatar || '']);
 
     return {
       id: result.insertId,
@@ -86,7 +88,7 @@ class User {
 
     if (userData.nickname !== undefined) {
       fields.push('nickname = ?');
-      values.push(userData.nickname);
+      values.push(clean(userData.nickname));
     }
     if (userData.avatar !== undefined) {
       fields.push('avatar = ?');

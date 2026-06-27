@@ -1,4 +1,5 @@
 const { mysqlPool } = require('../../config/database');
+const { clean, cleanArray } = require('../../utils/sanitize');
 
 const ALLOWED_ORDER_COLUMNS = ['created_at', 'taken_at', 'id', 'updated_at'];
 const ALLOWED_ORDER_DIRECTIONS = ['ASC', 'DESC'];
@@ -30,9 +31,11 @@ class Photo {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
       `;
 
+      const safeLocation = clean(location);
+      const safeTags = cleanArray(tags);
       const [result] = await mysqlPool.execute(query, [
         userId, familyId || null, cleanUrl, cleanThumbnailUrl, cleanFileName,
-        size, contentType, cleanHash, takenAt, location, JSON.stringify(tags)
+        size, contentType, cleanHash, takenAt, safeLocation, JSON.stringify(safeTags)
       ]);
 
       return {
@@ -221,7 +224,9 @@ class Photo {
       WHERE id = ? AND user_id = ?
     `;
 
-    const [result] = await mysqlPool.execute(query, [location, JSON.stringify(tags), id, userId]);
+    const safeLocation = clean(location);
+    const safeTags = cleanArray(tags);
+    const [result] = await mysqlPool.execute(query, [safeLocation, JSON.stringify(safeTags), id, userId]);
     return result.affectedRows > 0;
   }
 
