@@ -2,6 +2,7 @@ const User = require('../models/mysql/User');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const SmsService = require('./smsService');
+const auditLog = require('../utils/auditLog');
 
 class AuthService {
   /**
@@ -34,6 +35,8 @@ class AuthService {
     // 生成token
     const token = this.generateToken(user.id, user.phone);
 
+    auditLog('auth.register', { userId: user.id }, { phone });
+
     return {
       userId: user.id,
       token
@@ -61,6 +64,8 @@ class AuthService {
 
     // 生成token
     const token = this.generateToken(user.id, user.phone);
+
+    auditLog('auth.login', { userId: user.id }, { phone });
 
     return {
       userId: user.id,
@@ -92,8 +97,10 @@ class AuthService {
 
     // 查找或创建用户
     let user = await User.findByPhone(phone);
+    let isNewUser = false;
     if (!user) {
       // 新用户自动注册（空密码，phone_verified = 1）
+      isNewUser = true;
       user = await User.create({
         phone,
         password: '', // 空密码（仅SMS登录用户）
@@ -103,6 +110,8 @@ class AuthService {
 
     // 生成token
     const token = this.generateToken(user.id, user.phone);
+
+    auditLog('auth.smsLogin', { userId: user.id }, { phone, isNewUser });
 
     return {
       userId: user.id,

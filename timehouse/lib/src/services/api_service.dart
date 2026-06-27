@@ -290,18 +290,6 @@ class ApiService {
     return response.data;
   }
 
-  Future<Map<String, dynamic>> joinFamily(String inviteCode) async {
-    final response = await _dio.post('/families/join', data: {
-      'inviteCode': inviteCode,
-    });
-    return response.data;
-  }
-
-  Future<Map<String, dynamic>> generateInviteCode(String familyId) async {
-    final response = await _dio.post('/families/$familyId/invite');
-    return response.data;
-  }
-
   Future<Map<String, dynamic>> addFamilyMember(String familyId, String phone, String role) async {
     final response = await _dio.post('/families/$familyId/members', data: {
       'phone': phone,

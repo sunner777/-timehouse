@@ -1,5 +1,6 @@
 const AuthService = require('../services/authService');
 const response = require('../utils/response');
+const auditLog = require('../utils/auditLog');
 
 class AuthController {
   /**
@@ -114,6 +115,7 @@ class AuthController {
         const { redis } = require('../config/redis');
         await redis.set(`jwt_bl:${fp}`, '1', 'EX', ttl);
       }
+      auditLog('auth.logout', { userId: req.user?.id }, {});
       response.success(res, null, '已退出登录');
     } catch (error) {
       next(error);

@@ -91,40 +91,6 @@ class FamilyProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> joinFamily(String inviteCode) async {
-    _setLoading(true);
-    _setError(null);
-    try {
-      final response = await _apiService.joinFamily(inviteCode);
-      if (response['code'] == 0) {
-        await getFamilies();
-      } else {
-        _setError(response['message'] ?? '加入家庭组失败');
-      }
-    } catch (error) {
-      _setError('加入家庭组失败: $error');
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  Future<void> generateInviteCode(String familyId) async {
-    _setLoading(true);
-    _setError(null);
-    try {
-      final response = await _apiService.generateInviteCode(familyId);
-      if (response['code'] == 0) {
-        return response['data']['inviteCode'];
-      } else {
-        _setError(response['message'] ?? '生成邀请码失败');
-      }
-    } catch (error) {
-      _setError('生成邀请码失败: $error');
-    } finally {
-      _setLoading(false);
-    }
-  }
-
   Future<void> addMember(String familyId, String phone, String role) async {
     _setLoading(true);
     _setError(null);
