@@ -2,8 +2,8 @@ module.exports = {
   apps: [{
     name: 'timehouse-api',
     script: 'src/app.js',
-    instances: 1,
-    exec_mode: 'fork',
+    instances: 2,
+    exec_mode: 'cluster',
     max_memory_restart: '256M',
     env: {
       NODE_ENV: 'production',
