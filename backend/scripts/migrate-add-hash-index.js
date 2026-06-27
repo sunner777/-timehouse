@@ -2,29 +2,18 @@
  * 迁移：为 photos.hash 添加唯一索引
  *
  * 运行方式：node scripts/migrate-add-hash-index.js
+ * 生产环境：NODE_ENV=production node scripts/migrate-add-hash-index.js
  *
- * 作用：防止并发上传同一张照片时产生重复行。
- * 日常去重由 checkDuplicates() SELECT 查询完成，此索引为并发竞态兜底。
+ * 日常去重由 Photo.checkDuplicates() SELECT 查询完成，此索引为并发竞态兜底。
  */
-const mysql = require('mysql2/promise');
-const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+const { mysqlPool } = require('../src/config/database');
 
 async function main() {
-  const pool = mysql.createPool({
-    host: process.env.MYSQL_HOST || 'localhost',
-    port: process.env.MYSQL_PORT || 3306,
-    user: process.env.MYSQL_USER || 'root',
-    password: process.env.MYSQL_PASSWORD || 'password',
-    database: process.env.MYSQL_DATABASE || 'timehouse',
-  });
-
   try {
     // 检查索引是否已存在
-    const [existing] = await pool.execute(
+    const [existing] = await mysqlPool.execute(
       `SELECT COUNT(*) as cnt FROM information_schema.statistics
-       WHERE table_schema = ? AND table_name = 'photos' AND index_name = 'idx_photos_hash'`,
-      [process.env.MYSQL_DATABASE || 'timehouse']
+       WHERE table_schema = DATABASE() AND table_name = 'photos' AND index_name = 'idx_photos_hash'`
     );
 
     if (existing[0].cnt > 0) {
@@ -32,8 +21,8 @@ async function main() {
       return;
     }
 
-    // 检查是否有重复 hash 值（非空）
-    const [dupes] = await pool.execute(
+    // 检查是否有重复 hash 值
+    const [dupes] = await mysqlPool.execute(
       `SELECT hash, COUNT(*) as cnt FROM photos WHERE hash IS NOT NULL GROUP BY hash HAVING cnt > 1 LIMIT 5`
     );
     if (dupes.length > 0) {
@@ -43,10 +32,10 @@ async function main() {
       return;
     }
 
-    await pool.execute('CREATE UNIQUE INDEX idx_photos_hash ON photos(hash)');
+    await mysqlPool.execute('CREATE UNIQUE INDEX idx_photos_hash ON photos(hash)');
     console.log('索引 idx_photos_hash 创建成功。');
   } finally {
-    await pool.end();
+    await mysqlPool.end();
   }
 }
 
