@@ -147,7 +147,8 @@ MongoDB and Redis connections have been removed from startup (unused in V1.0/V2.
 | API URL | `https://api.timehouse.top` (port 443, ICP 备案已通过) |
 | ECS | `121.40.161.137`, Alibaba Cloud 99-plan, Ubuntu 22.04, 2C2G 3M |
 | Repo | `https://github.com/sunner777/-timehouse` |
-| SSH | `ssh -i ~/.ssh/id_ed25519_timehouse root@121.40.161.137` |
+| SSH | `ssh timehouse-server`（配置在 `~/.ssh/config`） |
+| Deploy | `git push server master && ssh timehouse-server '/opt/timehouse-repo/backend/deploy.sh'` |
 | MySQL | Docker 8.0, 127.0.0.1:3306, root password `112358` |
 | Redis | Docker 7.0, 127.0.0.1:6379 |
 | App path | `/opt/timehouse-repo/backend` (git clone of GitHub) |
